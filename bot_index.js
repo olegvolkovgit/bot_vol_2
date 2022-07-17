@@ -33,9 +33,9 @@ async function onMessage(ctx) {
         default:
             await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + message);
             await askForInfo(ctx);
-            isPhoto && await sendPhoto(ctx);
             break
     }
+    isPhoto && await sendPhoto(ctx);
 }
 
 async function sendPhoto(ctx) {
