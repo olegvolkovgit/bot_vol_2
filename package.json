@@ -2,7 +2,7 @@
   "author": "SSU_Vinnytsia",
   "type": "module",
   "scripts": {
-    "dev": "nodemon index.js"
+    "dev": "nodemon bot_index.js"
   },
   "dependencies": {
     "dotenv": "^16.0.1",
