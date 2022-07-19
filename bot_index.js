@@ -6,36 +6,73 @@ let user;
 let userId
 let isUserBot;
 let MESSAGE_PATTERN;
+let counter = 0;
+
+// const token = process.env.TICKET;
+
+// if (token === undefined) {
+//     throw new Error('BOT_TOKEN must be provided!')
+// }
+
 const bot = new Telegraf(process.env.TICKET);
 
+// bot.use(Telegraf.log());
+
+bot.on("message", onMessage);
 bot.start(startAction);
 bot.command('restart', startAction);
 bot.command('support', Telegraf.reply('world'));
 bot.action("no", (ctx) => { console.log(ctx) });
-bot.on("message", onMessage);
-
-function setMessagePattern(user, userId, isUserBot) {
-    MESSAGE_PATTERN = "user: { " + user + " }\n" + "user id: { " + userId + " }" + "\n" + "is user bot { " + isUserBot + " }" + "\n" + " USER MESSAGE: \n ";
-};
 
 async function onMessage(ctx) {
-    let message = ctx?.message?.contact || ctx.message.text || ctx.update.message.text;
-    let isPhoto = ctx?.update?.message?.photo || ctx?.message?.photo || ctx?.Context?.update?.message?.photo;
-    switch (message) {
-        case ctx?.message?.contact:
-            await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + JSON.stringify(ctx?.message?.contact?.phone_number));
-            await askForInfo(ctx);
-            break
-        case dialog.refuse:
-            await ctx.reply("Ok");
-            await askForInfo(ctx);
-            break
-        default:
-            await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + message);
-            await askForInfo(ctx);
-            break
+    counter++;
+
+    if (counter < 6) {
+        user = JSON.stringify(ctx?.update?.message?.from?.username) ||
+            JSON.stringify(ctx?.message?.from?.username) ||
+            JSON.stringify(ctx?.message?.chat?.username) ||
+            JSON.stringify(ctx?.update?.message?.chat?.username) ||
+            JSON.stringify(ctx?.update?.message?.sender_chat?.username);
+        userId = JSON.stringify(ctx?.update?.message?.from.id);
+        isUserBot = JSON.stringify(ctx?.update?.message?.from.is_bot);
+
+        let message = ctx?.message?.contact || ctx.message.text || ctx.update.message.text;
+        let isPhoto = ctx?.update?.message?.photo || ctx?.message?.photo || ctx?.Context?.update?.message?.photo;
+        let MESSAGE_PATTERN = "user: { " + user + " }\n" + "user id: { " + userId + " }" + "\n" + "is user bot { " + isUserBot + " }" + "\n" + " USER MESSAGE: \n ";
+
+        switch (message) {
+            case "/start":
+                await askForInfo(ctx);
+                await setButtonShareContact(ctx);
+                break
+            case "/restart":
+                await askForInfo(ctx);
+                await setButtonShareContact(ctx);
+                break
+            case ctx?.message?.contact:
+                await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + JSON.stringify(ctx?.message?.contact?.phone_number));
+                await alertLimitMessages(ctx);
+                break
+            case dialog.refuse:
+                await ctx.reply("Ok");
+                await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + message);
+                await alertLimitMessages(ctx);
+                break
+            default:
+                await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + message);
+                await alertLimitMessages(ctx);
+                break
+        }
+        isPhoto && await sendPhoto(ctx);
+    } else {
+        ctx.reply(dialog.sorry);
     }
-    isPhoto && await sendPhoto(ctx);
+}
+
+async function alertLimitMessages(ctx) {
+    let availablemessages = 5 - counter;
+
+    return ctx.reply(dialog.counter_prefix + " " + availablemessages + " " + dialog.counter_postfix);
 }
 
 async function sendPhoto(ctx) {
@@ -49,27 +86,20 @@ async function sendPhoto(ctx) {
 }
 
 async function startAction(ctx) {
-    user = JSON.stringify(ctx?.update?.message?.from?.username) ||
-        JSON.stringify(ctx?.message?.from?.username) ||
-        JSON.stringify(ctx?.message?.chat?.username) ||
-        JSON.stringify(ctx?.update?.message?.chat?.username) ||
-        JSON.stringify(ctx?.update?.message?.sender_chat?.username);
-    userId = JSON.stringify(ctx?.update?.message?.from.id);
-    isUserBot = JSON.stringify(ctx?.update?.message?.from.is_bot);
-    setMessagePattern(user, userId, isUserBot);
-    await setConstantButtonShareContact(ctx);
+    counter = 0;
 }
 
-async function setConstantButtonShareContact(ctx) {
+async function setButtonShareContact(ctx) {
     const keyboard = Markup.keyboard([
         Markup.button.contactRequest(dialog.shareContact, false),
         Markup.button.callback(dialog.refuse, "no")
-    ])
+    ]).oneTime()
+
     return ctx.reply(dialog.anonimous, keyboard)
 }
 
 async function askForInfo(ctx) {
-    return ctx.reply(dialog.askForInfo)
+    return await ctx.reply(dialog.askForInfo)
 }
 
 bot.launch();
