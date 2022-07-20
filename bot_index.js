@@ -43,6 +43,7 @@ async function onMessage(ctx) {
 
         switch (message) {
             case "/start":
+                await onStart(ctx)
                 await askForInfo(ctx);
                 await setButtonShareContact(ctx);
                 await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + "User pressed start button");
@@ -54,6 +55,7 @@ async function onMessage(ctx) {
                 break
             case ctx?.message?.contact:
                 await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + JSON.stringify(ctx?.message?.contact?.phone_number));
+                await improveData(ctx);
                 await alertLimitMessages(ctx);
                 break
             case dialog.refuse:
@@ -81,7 +83,7 @@ function resetCounter() {
 async function alertLimitMessages(ctx) {
     let availablemessages = 5 - counter;
 
-    return ctx.reply(dialog.counter_prefix + " " + availablemessages + " " + dialog.counter_postfix);
+    return ctx.reply(dialog.askForInfo + "\n\n" + dialog.counter_prefix + " " + availablemessages + " " + dialog.counter_postfix);
 }
 
 async function sendPhoto(ctx) {
@@ -98,17 +100,25 @@ async function startAction(ctx) {
     counter = 0;
 }
 
+async function improveData(ctx) {
+    return await ctx.reply(dialog.improvement);
+}
+
 async function setButtonShareContact(ctx) {
     const keyboard = Markup.keyboard([
         Markup.button.contactRequest(dialog.shareContact, false),
         Markup.button.callback(dialog.refuse, "no")
-    ]).oneTime()
+    ]).oneTime().resize();
 
-    return ctx.reply(dialog.anonimous, keyboard)
+    return ctx.replyWithHTML(dialog.anonimous, keyboard);
 }
 
 async function askForInfo(ctx) {
-    return await ctx.reply(dialog.askForInfo)
+    return await ctx.reply(dialog.askForInfo);
+}
+
+async function onStart(ctx) {
+    return await ctx.reply(dialog.atStart);
 }
 
 bot.launch();
