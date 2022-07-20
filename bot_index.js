@@ -20,12 +20,14 @@ const bot = new Telegraf(process.env.TICKET);
 
 bot.on("message", onMessage);
 bot.start(startAction);
-bot.command('restart', startAction);
-bot.command('support', Telegraf.reply('world'));
+// bot.command('support', Telegraf.reply('world'));
+bot.command("restart", resetCounter);
 bot.action("no", (ctx) => { console.log(ctx) });
 
 async function onMessage(ctx) {
     counter++;
+    let message = ctx?.message?.contact || ctx.message.text || ctx.update.message.text;
+    if (message === "/restart") { counter = 0; }
 
     if (counter < 6) {
         user = JSON.stringify(ctx?.update?.message?.from?.username) ||
@@ -36,7 +38,6 @@ async function onMessage(ctx) {
         userId = JSON.stringify(ctx?.update?.message?.from.id);
         isUserBot = JSON.stringify(ctx?.update?.message?.from.is_bot);
 
-        let message = ctx?.message?.contact || ctx.message.text || ctx.update.message.text;
         let isPhoto = ctx?.update?.message?.photo || ctx?.message?.photo || ctx?.Context?.update?.message?.photo;
         let MESSAGE_PATTERN = "user: { " + user + " }\n" + "user id: { " + userId + " }" + "\n" + "is user bot { " + isUserBot + " }" + "\n" + " USER MESSAGE: \n ";
 
@@ -49,6 +50,7 @@ async function onMessage(ctx) {
             case "/restart":
                 await askForInfo(ctx);
                 await setButtonShareContact(ctx);
+                counter = 0
                 break
             case ctx?.message?.contact:
                 await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + JSON.stringify(ctx?.message?.contact?.phone_number));
@@ -66,8 +68,14 @@ async function onMessage(ctx) {
         }
         isPhoto && await sendPhoto(ctx);
     } else {
+        ctx.deleteMessage(ctx.update.message.message_id);
         ctx.reply(dialog.sorry);
     }
+}
+
+function resetCounter() {
+    counter = 0;
+    console.log(counter)
 }
 
 async function alertLimitMessages(ctx) {
