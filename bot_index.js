@@ -69,7 +69,7 @@ async function onMessage(ctx) {
         isPhoto && await sendPhoto(ctx);
     } else {
         ctx.deleteMessage(ctx.update.message.message_id);
-        (counter < 6) && ctx.reply(dialog.sorry);
+        (counter > 4) && ctx.reply(dialog.sorry);
     }
 }
 
