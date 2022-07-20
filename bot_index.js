@@ -29,6 +29,7 @@ async function onMessage(ctx) {
     let message = ctx?.message?.contact || ctx.message.text || ctx.update.message.text;
     let isPhoto = ctx?.update?.message?.photo || ctx?.message?.photo || ctx?.Context?.update?.message?.photo;
     if (message === "/restart") { counter = 0; }
+    if (message === "/support") { onIssue(ctx) };
 
     if (counter < 6 && (message || isPhoto)) {
         user = JSON.stringify(ctx?.update?.message?.from?.username) ||
@@ -94,6 +95,11 @@ async function sendPhoto(ctx) {
         }
         await ctx.telegram.sendPhoto(process.env.postBox, photo[0].file_id);
     }
+}
+
+async function onIssue(ctx) {
+    await ctx.reply(dialog.onIssue);
+    await ctx.telegram.sendMessage(process.env.postBox, "!!! ALERT !!!");
 }
 
 async function startAction(ctx) {
