@@ -44,14 +44,13 @@ async function onMessage(ctx) {
 
         switch (message) {
             case "/start":
-                await onStart(ctx)
-                await askForInfo(ctx);
                 await setButtonShareContact(ctx);
                 await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + "User pressed start button");
                 break
             case "/restart":
                 await askForInfo(ctx);
                 await setButtonShareContact(ctx);
+                await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + "User pressed restart button");
                 counter = 0
                 break
             case ctx?.message?.contact:
