@@ -5,7 +5,7 @@ import dialog from './answers.js';
 let user;
 let userId
 let isUserBot;
-let counter = 0;
+let counter = 5;
 
 // const token = process.env.TICKET;
 
@@ -24,13 +24,12 @@ bot.command("restart", resetCounter);
 bot.action("no", (ctx) => { console.log(ctx) });
 
 async function onMessage(ctx) {
-    counter++;
     let message = ctx?.message?.contact || ctx.message.text || ctx.update.message.text;
     let isPhoto = ctx?.update?.message?.photo || ctx?.message?.photo || ctx?.Context?.update?.message?.photo;
-    if (message === "/restart") { counter = 0; }
+    if (message === "/restart") { counter = 5; }
     if (message === "/support") { onIssue(ctx) };
 
-    if (counter < 5 && (message || isPhoto)) {
+    if (counter > 0 && (message || isPhoto)) {
         user = JSON.stringify(ctx?.update?.message?.from?.username) ||
             JSON.stringify(ctx?.message?.from?.username) ||
             JSON.stringify(ctx?.message?.chat?.username) ||
@@ -50,7 +49,7 @@ async function onMessage(ctx) {
                 await askForInfo(ctx);
                 await setButtonShareContact(ctx);
                 await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + "User pressed restart button");
-                counter = 0
+                counter = 5;
                 break
             case ctx?.message?.contact:
                 await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + JSON.stringify(ctx?.message?.contact?.phone_number));
@@ -69,19 +68,20 @@ async function onMessage(ctx) {
         }
         isPhoto && await sendPhoto(ctx);
     } else {
-        ctx.deleteMessage(ctx.update.message.message_id);
-        (counter > 4) && ctx.reply(dialog.sorry);
+        if (counter < 0) {
+            ctx.reply(dialog.sorry);
+            ctx.deleteMessage(ctx.update.message.message_id);
+        }
     }
+    counter--;
 }
 
 function resetCounter() {
-    counter = 0;
+    counter = 5;
 }
 
 async function alertLimitMessages(ctx) {
-    let availablemessages = 6 - counter;
-
-    return ctx.reply(dialog.askForInfo + "\n\n" + dialog.counter_prefix + " " + availablemessages + " " + dialog.counter_postfix);
+    return ctx.reply(dialog.askForInfo + "\n\n" + dialog.counter_prefix + " " + counter + " " + dialog.counter_postfix);
 }
 
 async function sendPhoto(ctx) {
@@ -100,7 +100,7 @@ async function onIssue(ctx) {
 }
 
 async function startAction(ctx) {
-    counter = 0;
+    this.resetCounter()
 }
 
 async function improveData(ctx) {
