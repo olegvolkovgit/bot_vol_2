@@ -115,16 +115,16 @@ async function setButtonShareContact(ctx) {
         Markup.button.callback(dialog.refuse, "no")
     ]).oneTime().resize();
 
-    return ctx.replyWithHTML(dialog.anonimous, keyboard);
+    return await ctx.replyWithHTML(dialog.anonimous, keyboard);
 }
 
 async function askForInfo(ctx) {
     return await ctx.reply(dialog.askForInfo);
 }
 
-async function onStart(ctx) {
-    return await ctx.reply(dialog.atStart);
-}
+// async function onStart(ctx) {
+//     return await ctx.reply(dialog.atStart);
+// }
 
 bot.launch();
 
