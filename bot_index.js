@@ -5,7 +5,6 @@ import dialog from './answers.js';
 let user;
 let userId
 let isUserBot;
-let MESSAGE_PATTERN;
 let counter = 0;
 
 // const token = process.env.TICKET;
@@ -31,7 +30,7 @@ async function onMessage(ctx) {
     if (message === "/restart") { counter = 0; }
     if (message === "/support") { onIssue(ctx) };
 
-    if (counter < 6 && (message || isPhoto)) {
+    if (counter < 5 && (message || isPhoto)) {
         user = JSON.stringify(ctx?.update?.message?.from?.username) ||
             JSON.stringify(ctx?.message?.from?.username) ||
             JSON.stringify(ctx?.message?.chat?.username) ||
@@ -77,11 +76,10 @@ async function onMessage(ctx) {
 
 function resetCounter() {
     counter = 0;
-    console.log(counter)
 }
 
 async function alertLimitMessages(ctx) {
-    let availablemessages = 5 - counter;
+    let availablemessages = 6 - counter;
 
     return ctx.reply(dialog.askForInfo + "\n\n" + dialog.counter_prefix + " " + availablemessages + " " + dialog.counter_postfix);
 }
