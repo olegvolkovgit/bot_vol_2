@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { Markup, Telegraf } from 'telegraf';
 import dialog from './answers.js';
+import constants from './constants.js';
 
 let user;
 let userId
@@ -43,12 +44,12 @@ async function onMessage(ctx) {
         switch (message) {
             case "/start":
                 await setButtonShareContact(ctx);
-                await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + "User pressed start button");
+                await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + constants.START_WAS_PRESSED);
                 break
             case "/restart":
                 await askForInfo(ctx);
                 await setButtonShareContact(ctx);
-                await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + "User pressed restart button");
+                await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + constants.RESTART_WAS_PRESSED);
                 counter = 5;
                 break
             case ctx?.message?.contact:
@@ -63,7 +64,7 @@ async function onMessage(ctx) {
                 counter ? await alertLimitMessages(ctx) : await alertNoMessages(ctx);
                 break
         }
-        isPhoto && await sendPhoto(ctx);
+        if (isPhoto) { await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + constants.PHOTO_SENT); await sendPhoto(ctx); }
     } else {
         if (counter <= 0) {
             ctx.reply(dialog.sorry);
