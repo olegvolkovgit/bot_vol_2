@@ -8,19 +8,12 @@ let userId
 let isUserBot;
 let counter = 5;
 
-// const token = process.env.TICKET;
-
-// if (token === undefined) {
-//     throw new Error('BOT_TOKEN must be provided!')
-// }
-
 const bot = new Telegraf(process.env.TICKET);
 
-// bot.use(Telegraf.log());
+bot.use(Telegraf.log());
 
 bot.on("message", onMessage);
 bot.start(startAction);
-// bot.command('support', Telegraf.reply('world'));
 bot.command("restart", resetCounter);
 bot.action("no", (ctx) => { console.log(ctx) });
 
@@ -71,7 +64,6 @@ async function onMessage(ctx) {
             ctx.deleteMessage(ctx.update.message.message_id);
         }
     }
-
 }
 
 function resetCounter() {
