@@ -52,28 +52,25 @@ async function onMessage(ctx) {
                 counter = 5;
                 break
             case ctx?.message?.contact:
+                counter--;
                 await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + JSON.stringify(ctx?.message?.contact?.phone_number));
                 await improveData(ctx);
                 await alertLimitMessages(ctx);
                 break
-            case dialog.refuse:
-                await ctx.reply("Ok");
-                await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + message);
-                await alertLimitMessages(ctx);
-                break
             default:
+                counter--;
                 await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + message);
-                await alertLimitMessages(ctx);
+                counter ? await alertLimitMessages(ctx) : await alertNoMessages(ctx);
                 break
         }
         isPhoto && await sendPhoto(ctx);
     } else {
-        if (counter < 0) {
+        if (counter <= 0) {
             ctx.reply(dialog.sorry);
             ctx.deleteMessage(ctx.update.message.message_id);
         }
     }
-    counter--;
+
 }
 
 function resetCounter() {
@@ -99,8 +96,12 @@ async function onIssue(ctx) {
     await ctx.telegram.sendMessage(process.env.postBox, "!!! ALERT !!!");
 }
 
-async function startAction(ctx) {
-    this.resetCounter()
+function startAction() {
+    this.resetCounter();
+}
+
+async function alertNoMessages(ctx) {
+    return await ctx.reply(dialog.noMessages);
 }
 
 async function improveData(ctx) {
@@ -110,7 +111,6 @@ async function improveData(ctx) {
 async function setButtonShareContact(ctx) {
     const keyboard = Markup.keyboard([
         Markup.button.contactRequest(dialog.shareContact, false),
-        Markup.button.callback(dialog.refuse, "no")
     ]).oneTime().resize();
 
     return await ctx.replyWithHTML(dialog.anonimous, keyboard);
