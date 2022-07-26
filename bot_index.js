@@ -7,6 +7,8 @@ let user;
 let userId
 let isUserBot;
 let counter = 5;
+let DOES_FIRST_MESSAGE_WAS_SHOWN = false;
+let USER_HAD_SHARE_CONTACT = false;
 
 const bot = new Telegraf(process.env.TICKET);
 
@@ -20,7 +22,7 @@ bot.action("no", (ctx) => { console.log(ctx) });
 async function onMessage(ctx) {
     let message = ctx?.message?.contact || ctx.message.text || ctx.update.message.text;
     let isPhoto = ctx?.update?.message?.photo || ctx?.message?.photo || ctx?.Context?.update?.message?.photo;
-    if (message === "/restart") { counter = 5; }
+    if (message === "/restart") { counter = 5; DOES_FIRST_MESSAGE_WAS_SHOWN = false }
     if (message === "/support") { onIssue(ctx) };
 
     if (counter > 0 && (message || isPhoto)) {
@@ -36,25 +38,28 @@ async function onMessage(ctx) {
 
         switch (message) {
             case "/start":
-                await setButtonShareContact(ctx);
+                await setButtonShareContactWithText(ctx);
                 await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + constants.START_WAS_PRESSED);
                 break
             case "/restart":
                 await askForInfo(ctx);
-                await setButtonShareContact(ctx);
+                await setButtonShareContactWithText(ctx);
                 await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + constants.RESTART_WAS_PRESSED);
                 counter = 5;
                 break
             case ctx?.message?.contact:
                 counter--;
+                USER_HAD_SHARE_CONTACT = true
                 await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + JSON.stringify(ctx?.message?.contact?.phone_number));
                 await improveData(ctx);
                 await alertLimitMessages(ctx);
                 break
             default:
                 counter--;
+                await askForInfo(ctx);
                 await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + message);
                 counter ? await alertLimitMessages(ctx) : await alertNoMessages(ctx);
+                await setButtonShareContact(ctx);
                 break
         }
         if (isPhoto) { await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + constants.PHOTO_SENT); await sendPhoto(ctx); }
@@ -71,7 +76,7 @@ function resetCounter() {
 }
 
 async function alertLimitMessages(ctx) {
-    return ctx.reply(dialog.askForInfo + "\n\n" + dialog.counter_prefix + " " + counter + " " + dialog.counter_postfix);
+    return ctx.reply(dialog.counter_prefix + " " + counter + " " + dialog.counter_postfix);
 }
 
 async function sendPhoto(ctx) {
@@ -101,16 +106,31 @@ async function improveData(ctx) {
     return await ctx.reply(dialog.improvement);
 }
 
-async function setButtonShareContact(ctx) {
+async function setButtonShareContactWithText(ctx) {
     const keyboard = Markup.keyboard([
         Markup.button.contactRequest(dialog.shareContact, false),
-    ]).oneTime().resize();
+    ]).resize();
 
     return await ctx.replyWithHTML(dialog.anonimous, keyboard);
 }
 
+async function setButtonShareContact(ctx) {
+    if (!USER_HAD_SHARE_CONTACT) {
+        const keyboard = Markup.keyboard([
+            Markup.button.contactRequest(dialog.shareContact),
+        ]).resize();
+        return await ctx.replyWithHTML(dialog.callbackContact, keyboard);
+    }
+
+    return
+};
+
 async function askForInfo(ctx) {
-    return await ctx.reply(dialog.askForInfo);
+    if (!DOES_FIRST_MESSAGE_WAS_SHOWN) {
+        DOES_FIRST_MESSAGE_WAS_SHOWN = true;
+        return await ctx.reply(dialog.askForInfo);
+    }
+    return
 }
 
 // async function onStart(ctx) {
