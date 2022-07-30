@@ -38,6 +38,7 @@ async function onMessage(ctx) {
 
         switch (message) {
             case "/start":
+                await askForInfo(ctx);
                 await setButtonShareContactWithText(ctx);
                 await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + constants.START_WAS_PRESSED);
                 break
@@ -58,8 +59,13 @@ async function onMessage(ctx) {
                 counter--;
                 await askForInfo(ctx);
                 await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + message);
-                counter ? await alertLimitMessages(ctx) : await alertNoMessages(ctx);
-                await setButtonShareContact(ctx);
+                if (counter) {
+                    await msgToService(ctx);
+                    await alertLimitMessages(ctx)
+                    await setButtonShareContact(ctx);
+                } else {
+                    await alertNoMessages(ctx);
+                }
                 break
         }
         if (isPhoto) { await ctx.telegram.sendMessage(process.env.postBox, MESSAGE_PATTERN + constants.PHOTO_SENT); await sendPhoto(ctx); }
@@ -131,6 +137,10 @@ async function askForInfo(ctx) {
         return await ctx.reply(dialog.askForInfo);
     }
     return
+}
+
+async function msgToService(ctx) {
+    return await ctx.reply(dialog.MsgSentToService);
 }
 
 // async function onStart(ctx) {
